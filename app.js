@@ -6,8 +6,8 @@ const logger = require('morgan')
 const dotenv = require('dotenv')
 require('dotenv').config()
 
-const indexRouter = require('./routes/index')
-const botsRouter = require('./routes/bot')
+const botsRouter = require('./routes/bots')
+const authorsRouter = require('./routes/authors')
 
 let db = require('./db.js')
 
@@ -25,6 +25,7 @@ app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
 
 app.use('/bots', botsRouter)
+app.use('/authors', authorsRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
