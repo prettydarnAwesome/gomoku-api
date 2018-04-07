@@ -2,8 +2,29 @@ var express = require('express')
 var router = express.Router()
 const db = require('../db.js')
 
+function getBotsInfo(data) {
+  return data.merge(set => {
+    let rows = db.db('gomoku').table('SetScores').getAll(set('botID'), { index: 'botID' })
+    return {
+      winRate: rows.sum('botWins').div(rows.sum('botWins').add(rows.sum('botDraws').add(rows.sum('botLosses'))))
+    }
+  })
+}
+
 router.get('/', function (req, res, next) {
-  db.db('gomoku').table('Bots').run(db.connection, (err, cursor) => {
+  let count = req.query.count ? parseInt(req.query.count) : undefined
+  let order = req.query.orderby ? req.query.orderby.split(':') : undefined
+  let orderField = order ? order[0] : ''
+  let orderDirection = order ? order[1] : ''
+
+  if(order && order.length == 1) order.push('desc')
+
+  let bots = getBotsInfo(db.db('gomoku').table('Bots').without('code', 'store'))
+  let ordered = order ? bots.orderBy(orderDirection == 'asc' ? db.asc(orderField) : db.desc(orderField)) : bots
+  let filtered = count ? ordered.limit(count) : ordered
+
+  filtered.run(db.connection, (err, cursor) => {
+    if (err) throw err
     cursor.toArray().then(data => res.json(data))
   })
 })

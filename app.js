@@ -3,11 +3,13 @@ const express = require('express')
 const path = require('path')
 const cookieParser = require('cookie-parser')
 const logger = require('morgan')
+const cors = require('cors')
 const dotenv = require('dotenv')
 require('dotenv').config()
 
 const botsRouter = require('./routes/bots')
 const authorsRouter = require('./routes/authors')
+const setsRouter = require('./routes/sets')
 
 let db = require('./db.js')
 
@@ -23,9 +25,11 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
+app.use(cors())
 
 app.use('/bots', botsRouter)
 app.use('/authors', authorsRouter)
+app.use('/sets', setsRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -36,7 +40,8 @@ app.use(function (req, res, next) {
 app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message
-  res.locals.error = req.app.get('env') === 'development' ? err : {}
+  console.log(err)
+  res.locals.error = process.env.DEBUG == 1 ? err : {}
 
   // render the error page
   res.status(err.status || 500)
