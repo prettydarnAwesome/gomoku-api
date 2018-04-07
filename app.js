@@ -49,3 +49,30 @@ app.use(function (err, req, res, next) {
 })
 
 module.exports = app
+
+///////////////////////
+
+const WebSocket = require('ws')
+const wss = new WebSocket.Server({ port: 3001 })
+
+wss.on('connection', function connection(ws) {
+  ws.on('message', function incoming(message) {
+    console.log('received: %s', message)
+  })
+
+  function hookTable(table) {
+    db.db('gomoku').table(table).changes().run(db.connection, function (err, cursor) {
+      cursor.each((err, row) => {
+        console.log(row)
+        ws.send(JSON.stringify({
+          type: 'update',
+          table: table,
+          row: row
+        }))
+      })
+    })
+  }
+
+  for (let table of ['Bots', 'Authors', 'Sets']) hookTable(table)
+  
+})

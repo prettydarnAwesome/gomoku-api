@@ -5,8 +5,10 @@ const db = require('../db.js')
 function getBotsInfo(data) {
   return data.merge(set => {
     let rows = db.db('gomoku').table('SetScores').getAll(set('botID'), { index: 'botID' })
+    let totalRows = rows.sum('botWins').add(rows.sum('botDraws').add(rows.sum('botLosses')))
     return {
-      winRate: rows.sum('botWins').div(rows.sum('botWins').add(rows.sum('botDraws').add(rows.sum('botLosses'))))
+      winRate: db.branch(totalRows.eq(0), 0,
+        rows.sum('botWins').div(totalRows))
     }
   })
 }
@@ -17,7 +19,7 @@ router.get('/', function (req, res, next) {
   let orderField = order ? order[0] : ''
   let orderDirection = order ? order[1] : ''
 
-  if(order && order.length == 1) order.push('desc')
+  if (order && order.length == 1) order.push('desc')
 
   let bots = getBotsInfo(db.db('gomoku').table('Bots').without('code', 'store'))
   let ordered = order ? bots.orderBy(orderDirection == 'asc' ? db.asc(orderField) : db.desc(orderField)) : bots
