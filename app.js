@@ -10,6 +10,8 @@ require('dotenv').config()
 const botsRouter = require('./routes/bots')
 const authorsRouter = require('./routes/authors')
 const setsRouter = require('./routes/sets')
+const matchesRouter = require('./routes/matches')
+const uploadRouter = require('./routes/upload')
 
 let db = require('./db.js')
 
@@ -24,12 +26,15 @@ app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
+
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(cors())
 
 app.use('/bots', botsRouter)
 app.use('/authors', authorsRouter)
 app.use('/sets', setsRouter)
+app.use('/matches', matchesRouter)
+app.use('/upload', uploadRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -64,15 +69,16 @@ wss.on('connection', function connection(ws) {
     db.db('gomoku').table(table).changes().run(db.connection, function (err, cursor) {
       cursor.each((err, row) => {
         console.log(row)
-        ws.send(JSON.stringify({
-          type: 'update',
-          table: table,
-          row: row
-        }))
+        if (ws.readyState == WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'update',
+            table: table,
+            row: row
+          }))
+        }  
       })
     })
   }
 
-  for (let table of ['Bots', 'Authors', 'Sets']) hookTable(table)
-  
+  for (let table of ['Bots', 'Authors', 'SetScores']) hookTable(table)
 })
